@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <title>Socket IO Private Chat</title>
+        <style>
+            #chat{
+                height: 500px;
+            }
+            #contentWrap {
+                display: none;
+            }
+            #chatWrap {
+                float: left;
+                border : 1px #000 solid;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="nickWrap">
+            <p>Enter a Username :</p>
+            <p id="nickError"></p>
+            <form id="setNick">
+                <input type="text" size="35" id="nickname" />
+                <input type="submit" />
+            </form>
+        </div>
+
+        <div id="contentWrap">
+            <div id="chatWrap">
+                <div id="chat"></div>
+                <form id="send-message">
+                    <input type="text" size="35" id="message"/>
+                    <input type="submit" />
+                </form>
+            </div>
+            <div id="users"></div>
+        </div>
+
+
+    </body>
+    <script src="//code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        $(function(){
+            var socket = io.connect();
+
+            var $nickForm = $('#setNick');
+            var $nickError = $('#nickError');
+            var $nickname = $('#nickname');
+
+            var $messageForm = $('#send-message');
+            var $messageBox = $('#message');
+            var $chat = $('#chat');
+
+            $nickForm.submit(function(e){
+                e.preventDefault();
+                if($nickname.val() != ""){
+                    socket.emit('new user', $nickname.val(), function(response){
+                        if(response){
+                            $nickError.html('');
+                            $("#nickWrap").hide();
+                            $("#contentWrap").show();
+                        }else{
+                            $nickError.html('This name is already taken, please choose another.');
+                        }
+                    });
+                }else{
+                    $nickError.html('Please add your nick name');
+                }
+                $nickname.val('');
+            });
+
+            $messageForm.submit(function(e){
+                e.preventDefault();
+                socket.emit('send message', $messageBox.val());
+                $messageBox.val('');
+            });
+
+            socket.on('new message', function(data){
+                $chat.append(data+'<br/>');
+            });
+
+            socket.on('usernames', function(usernameArray){
+                $htmlUsers = '';
+                for(i = 0; i< usernameArray.length; i++){
+                    $htmlUsers += usernameArray[i]+'<br/>' ;
+                }
+                $('#users').html($htmlUsers); 
+            });
+        });
+    </script>
+</html>
